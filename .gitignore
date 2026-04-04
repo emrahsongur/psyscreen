@@ -34,6 +34,11 @@ venv/
 .venv/
 env/
 
+# PyInstaller (build çıktıları ve spec)
+build/
+dist/
+PsyScreen_6_0.spec
+
 # IDE / düzenleyici
 .idea/
 .vscode/
