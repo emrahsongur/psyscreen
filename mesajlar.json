@@ -1,0 +1,22 @@
+[
+    {
+        "ad": "Poliklinik Anonsu",
+        "icerik": "Psikiyatri Polikliniği"
+    },
+    {
+        "ad": "Mola Anonsu",
+        "icerik": "Doktor kısa bir mola vermiştir.\nLütfen bekleyiniz."
+    },
+    {
+        "ad": "Heyet",
+        "icerik": "Psikiyatri (Heyet) Polikliniği"
+    },
+    {
+        "ad": "Öğlen yemeği",
+        "icerik": "Doktor öğlen yemeğine çıkmıştır."
+    },
+    {
+        "ad": "Hasta var",
+        "icerik": "İçeride hasta muayenesi devam ediyor. Lütfen bekleyiniz."
+    }
+]

@@ -1,0 +1,46 @@
+# Yerel doktor profili (API anahtarları, tokenlar — asla repoya eklenmemeli)
+profiller.json
+
+# Cursor yerel yapılandırma ve kurallar
+.cursor/
+
+# Hastane logoları ve görseller (klasör kalır; içerik kullanıcıya özel)
+hastaneler/*
+!hastaneler/.gitkeep
+
+# Uygulama log ve çıktı dosyaları
+*.xlsx
+hata_gunlugu.txt
+*.log
+
+# Profil yedekleri (yanlışlıkla sırlı kopya commit edilmesin)
+profiller.json.bak
+profiller*.bak
+
+# Ortam değişkenleri ve ek sırlar
+.env
+.env.*
+secrets.json
+*.pem
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+
+# IDE / düzenleyici
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,17 @@
+[
+    {
+        "ad": "Uzm. Dr. Ad Soyad",
+        "icerik": "Uzm. Dr. Ad Soyad",
+        "telegram_token": "",
+        "telegram_chat_id": "",
+        "api_url": "",
+        "api_bearer": "",
+        "notion_token": "",
+        "notion_mola_db_id": "",
+        "notion_cagirma_db_id": "",
+        "notion_muayene_db_id": "",
+        "mola_mesaji_adi": "Mola Anonsu",
+        "mola_sonrasi_mesaji_adi": "Poliklinik Anonsu",
+        "hasta_var_mesaji_adi": "Hasta var"
+    }
+]
