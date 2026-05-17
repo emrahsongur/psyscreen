@@ -156,6 +156,7 @@ pip_mola_button, pip_patient_button, pip_mola_entry = (None,) * 3
 pip_patient_combobox, pip_refresh_patient_btn, pip_call_patient_btn, pip_reset_patient_btn = (None,) * 4
 pip_clock_label, pip_clock_job_id = (None,) * 2
 selected_patient_var = None
+mask_patient_name_var = None
 is_on_stopwatch_break = False; stopwatch_seconds = 0; stopwatch_job_id = None
 g_patient_inside_total_seconds = 0; pip_timer_seconds = 0
 PREVIEW_SIZE = 300; DEFAULT_BG_COLOR, DEFAULT_FG_COLOR = '#FFFFFF', '#000000'; selected_bg_color, selected_fg_color = DEFAULT_BG_COLOR, DEFAULT_FG_COLOR
@@ -482,8 +483,9 @@ def patient_display_handler(seconds_left):
         current_color = g_patient_name_label.cget("fg")
         g_patient_name_label.config(fg="#dc3545" if current_color == "white" else "white")
     g_patient_display_job = root.after(500, lambda: patient_display_handler(seconds_left - 0.5))
+
 def call_patient():
-    global g_patient_name_label, g_patient_display_job, g_patient_data_from_api
+    global g_patient_name_label, g_patient_display_job, g_patient_data_from_api, mask_patient_name_var
     reset_patient_call(clear_entry=False)
     selected_text = selected_patient_var.get().strip()
     if not selected_text or "yükleniyor" in selected_text or "bulunamadı" in selected_text or "yüklenemedi" in selected_text or "ayarlanmamış" in selected_text:
@@ -494,13 +496,20 @@ def call_patient():
     else: patient_name_to_call = selected_text.split('(')[0].strip()
     doktor_adi = selected_profile.get()
     log_hasta_cagirma(doktor_adi, patient_name_to_call, "Hasta Çağrıldı")
-    censored = censor_name(patient_name_to_call)
-    send_telegram_message(f"Sn. {doktor_adi}, {censored} isimli hastayı çağırdınız.", notification_type='hasta')
+    
+    # Arayüzdeki ayara göre ismi maskele veya tam halini bırak
+    if mask_patient_name_var and mask_patient_name_var.get():
+        display_name = censor_name(patient_name_to_call)
+    else:
+        display_name = turkce_upper(patient_name_to_call)
+        
+    send_telegram_message(f"Sn. {doktor_adi}, {display_name} isimli hastayı çağırdınız.", notification_type='hasta')
     container = tk.Frame(patient_frame_on_screen, bg=selected_bg_color); container.pack(pady=20)
     red_box = tk.Frame(container, bg="#dc3545"); red_box.pack()
     tk.Label(red_box, text="ÇAĞIRILAN HASTA", font=("Helvetica", 27, "bold"), fg="white", bg="#dc3545").pack(pady=(5,0), padx=20)
-    g_patient_name_label = tk.Label(red_box, text=censored, font=("Helvetica", 60, "bold"), fg="white", bg="#dc3545"); g_patient_name_label.pack(pady=(5,10), padx=20)
+    g_patient_name_label = tk.Label(red_box, text=display_name, font=("Helvetica", 60, "bold"), fg="white", bg="#dc3545"); g_patient_name_label.pack(pady=(5,10), padx=20)
     patient_display_handler(20); update_preview()
+
 def reset_patient_call(clear_entry=True):
     global g_patient_display_job, g_patient_name_label
     if clear_entry and selected_patient_var and selected_patient_var.get():
@@ -812,8 +821,8 @@ def close_secondary_screen(keep_timer=False):
     update_all_button_states()
 
 def setup_gui(master_window):
-    global root, text_area, return_time_entry, bg_color_swatch, fg_color_swatch, selected_screen, preview_square_frame, patient_entry, patient_combobox, refresh_patient_btn, selected_profile, profile_menu, selected_message, message_menu, selected_hospital, hospital_menu, local_timer_label, start_stop_button, reset_button, mola_telegram_var, hasta_telegram_var, mola_telegram_check, hasta_telegram_check, screen_menu, warning_time_entry, close_screen_button, patient_inside_button, patient_inside_timer_entry, call_patient_btn, reset_patient_btn, end_break_button, selected_patient_var, log_mola_var, log_cagirma_var, log_muayene_var, log_notion_mola_var, log_notion_cagirma_var, log_notion_muayene_var, log_notion_mola_check, log_notion_cagirma_check, log_notion_muayene_check
-    root = master_window; root.title("Poliklinik Ekran Yöneticisi v6.0"); root.geometry("1500x740"); root.minsize(1500, 740)
+    global root, text_area, return_time_entry, bg_color_swatch, fg_color_swatch, selected_screen, preview_square_frame, patient_entry, patient_combobox, refresh_patient_btn, selected_profile, profile_menu, selected_message, message_menu, selected_hospital, hospital_menu, local_timer_label, start_stop_button, reset_button, mola_telegram_var, hasta_telegram_var, mola_telegram_check, hasta_telegram_check, screen_menu, warning_time_entry, close_screen_button, patient_inside_button, patient_inside_timer_entry, call_patient_btn, reset_patient_btn, end_break_button, selected_patient_var, log_mola_var, log_cagirma_var, log_muayene_var, log_notion_mola_var, log_notion_cagirma_var, log_notion_muayene_var, log_notion_mola_check, log_notion_cagirma_check, log_notion_muayene_check, mask_patient_name_var
+    root = master_window; root.title("Poliklinik Ekran Yöneticisi v6.1"); root.geometry("1500x740"); root.minsize(1500, 740)
     style = ttk.Style(); style.theme_use('clam')
     style.configure("TButton", padding=6, relief="flat", font=('Helvetica', 9, 'bold'))
     style.configure("Blue.TButton", background="#007bff", foreground="white"); style.map("Blue.TButton", background=[('active', '#0056b3')])
@@ -916,6 +925,10 @@ def setup_gui(master_window):
     reset_patient_btn = ttk.Button(button_frame, text="Sıfırla", style="Red.TButton", command=reset_patient_call); reset_patient_btn.pack(side='left')
     hasta_telegram_var = tk.BooleanVar(value=False); hasta_telegram_check = ttk.Checkbutton(patient_call_frame_preview, text="Telegram Bildirimi Gönder", variable=hasta_telegram_var, style="Switch.TCheckbutton", state="disabled"); hasta_telegram_check.grid(row=1, column=0, columnspan=3, pady=(5,0), sticky='w')
     
+    mask_patient_name_var = tk.BooleanVar(value=True) # Varsayılan olarak isimler maskeli gelsin
+    mask_patient_name_check = ttk.Checkbutton(patient_call_frame_preview, text="Hasta İsimlerini Maskele (Örn: AH*** YIL***)", variable=mask_patient_name_var, style="Switch.TCheckbutton")
+    mask_patient_name_check.grid(row=2, column=0, columnspan=3, pady=(5,0), sticky='w')
+
     refresh_hospital_dropdown(); refresh_profile_dropdown(); refresh_message_dropdown()
     if load_data(PROFILER_DOSYASI, []): profile_changed()
     if load_data(MESAJLAR_DOSYASI, []): message_changed()

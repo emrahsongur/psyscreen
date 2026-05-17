@@ -6,6 +6,7 @@ Tkinter tabanlı masaüstü uygulaması: bekleme salonu / ikinci monitörde anon
 
 ## Güncellemeler (yeniden eskiye)
 
+- **2026-05-17** — v6.1: hasta ismi maskeleme seçeneği; kanonik giriş dosyası `PsyScreen.py`. Yerel sürüm dosyaları (`PsyScreen_6_0.py`, `PsyScreen_6_1.py`) repoya dahil değil.
 - **2026-04-04** — GitHub için repo düzeni: `.gitignore`, `profiller.example.json`, `requirements.txt`, `hastaneler/.gitkeep`, yerel `.cursor/RULES.md`, bu README ve güvenlik odaklı ignore kuralları eklendi.
 
 ---
@@ -38,7 +39,7 @@ pip install -r requirements.txt
 ## Çalıştırma
 
 ```bash
-python PsyScreen_6_0.py
+python PsyScreen.py
 ```
 
 Sistem tepsisinden kontrol panelini açıp kapatabilirsiniz.
@@ -47,7 +48,7 @@ Sistem tepsisinden kontrol panelini açıp kapatabilirsiniz.
 
 | Dosya | Açıklama |
 | --- | --- |
-| `PsyScreen_6_0.py` | Ana uygulama |
+| `PsyScreen.py` | Ana uygulama (v6.1) |
 | `profiller.example.json` | Profil şablonu (anahtarlar boş) |
 | `mesajlar.json` | Hazır anons metinleri |
 | `hastaneler.json` | Hastane adı ve logo yolu |

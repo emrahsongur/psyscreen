@@ -38,6 +38,11 @@ env/
 build/
 dist/
 PsyScreen_6_0.spec
+PsyScreen_6_1.spec
+
+# Yerel sürüm dosyaları (kanonik giriş: PsyScreen.py)
+PsyScreen_6_0.py
+PsyScreen_6_1.py
 
 # IDE / düzenleyici
 .idea/
