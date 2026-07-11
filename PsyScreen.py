@@ -46,7 +46,6 @@ def send_telegram_message(message_text, notification_type='mola'):
     except Exception as e: print(f"Telegram mesajı gönderilirken hata oluştu: {e}")
 
 def send_log_to_notion(token, db_id, properties_payload):
-    # Bu fonksiyon artık doğrudan çağrılmadan önce Notion loglama değişkeni kontrol edilecek.
     if not token or not db_id: return
     url = "https://api.notion.com/v1/pages"
     headers = { "Authorization": f"Bearer {token}", "Content-Type": "application/json", "Notion-Version": "2022-06-28" }
@@ -153,7 +152,7 @@ text_area, return_time_entry, bg_color_swatch, fg_color_swatch, selected_screen,
 mola_telegram_var, hasta_telegram_var, mola_telegram_check, hasta_telegram_check = (None,) * 4
 pip_window = None
 pip_mola_button, pip_patient_button, pip_mola_entry = (None,) * 3
-pip_patient_combobox, pip_refresh_patient_btn, pip_call_patient_btn, pip_reset_patient_btn = (None,) * 4
+pip_patient_combobox, pip_refresh_patient_btn, pip_call_patient_btn, pip_reset_patient_btn, pip_screen_button, pip_main_window_button = (None,) * 6
 pip_clock_label, pip_clock_job_id = (None,) * 2
 selected_patient_var = None
 mask_patient_name_var = None
@@ -162,18 +161,31 @@ g_patient_inside_total_seconds = 0; pip_timer_seconds = 0
 PREVIEW_SIZE = 300; DEFAULT_BG_COLOR, DEFAULT_FG_COLOR = '#FFFFFF', '#000000'; selected_bg_color, selected_fg_color = DEFAULT_BG_COLOR, DEFAULT_FG_COLOR
 timer_label, local_timer_label, start_stop_button, reset_button, countdown_job_id, external_clock_job_id, end_break_button = (None,) * 7
 countdown_seconds_remaining = None; is_countdown_paused = False; is_warning_sent = False 
-is_on_break = False; is_on_overtime_break = False; overtime_seconds = 0; overtime_job_id = None # Mola uzatma için yeni değişkenler
+is_on_break = False; is_on_overtime_break = False; overtime_seconds = 0; overtime_job_id = None 
 patient_inside_button, patient_inside_timer_entry, is_patient_inside, patient_inside_job_id = (None,) * 4; is_patient_inside = False
 g_patient_display_job, g_patient_name_label, g_patient_data_from_api, call_patient_btn, reset_patient_btn = (None,) * 5
-log_mola_var, log_cagirma_var, log_muayene_var = (None,) * 3 # Ana Notion logu kaldırıldı
-log_notion_mola_var, log_notion_cagirma_var, log_notion_muayene_var = (None,) * 3 # Ayrı Notion logları
-log_notion_mola_check, log_notion_cagirma_check, log_notion_muayene_check = (None,) * 3 # Ayrı Notion checkbox widgetları
+log_mola_var, log_cagirma_var, log_muayene_var = (None,) * 3 
+log_notion_mola_var, log_notion_cagirma_var, log_notion_muayene_var = (None,) * 3 
+log_notion_mola_check, log_notion_cagirma_check, log_notion_muayene_check = (None,) * 3 
 
 # --- Yüzen Buton (PiP) Fonksiyonları ---
 _drag_data = {"x": 0, "y": 0}
 def start_drag(event): _drag_data["x"] = event.x; _drag_data["y"] = event.y
 def do_drag(event):
     if pip_window: dx = event.x - _drag_data["x"]; dy = event.y - _drag_data["y"]; x = pip_window.winfo_x() + dx; y = pip_window.winfo_y() + dy; pip_window.geometry(f"+{x}+{y}")
+
+def toggle_external_screen_from_pip():
+    if message_window and message_window.winfo_exists():
+        close_secondary_screen(keep_timer=False)
+    else:
+        show_message()
+
+def toggle_main_window_from_pip():
+    if root and root.winfo_viewable():
+        hide_window()
+    else:
+        show_window()
+
 def toggle_pip_window():
     global pip_window
     if pip_window and pip_window.winfo_exists(): pip_window.destroy(); pip_window = None
@@ -190,10 +202,11 @@ def update_pip_clock(clock_widget):
 
 def create_pip_window():
     global pip_window, pip_mola_button, pip_patient_button, pip_mola_entry
-    global pip_patient_combobox, pip_refresh_patient_btn, pip_call_patient_btn, pip_reset_patient_btn, pip_clock_label
+    global pip_patient_combobox, pip_refresh_patient_btn, pip_call_patient_btn, pip_reset_patient_btn, pip_clock_label, pip_screen_button, pip_main_window_button
+    
     if pip_window and pip_window.winfo_exists(): pip_window.lift(); return
     pip_window = tk.Toplevel(root)
-    pip_window.geometry("720x40")
+    pip_window.geometry("880x35")
     pip_window.resizable(False, False)
     pip_window.overrideredirect(True)
     pip_window.wm_attributes("-topmost", 1)
@@ -220,18 +233,29 @@ def create_pip_window():
     style.configure("Green.PiP.TButton", background="#28a745", foreground="white"); style.map("Green.PiP.TButton", background=[('active', '#218838')])
     style.configure("Red.PiP.TButton", background="#dc3545", foreground="white"); style.map("Red.PiP.TButton", background=[('active', '#c82333')])
     style.configure("Blue.TButton", background="#007bff", foreground="white"); style.map("Blue.TButton", background=[('active', '#0056b3')])
+    
     mola_frame = ttk.Frame(content_frame); mola_frame.pack(side="left", fill="y", padx=(0, 2))
     pip_mola_entry = ttk.Entry(mola_frame, width=7, font=("Helvetica", 10)); pip_mola_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
     pip_mola_button = ttk.Button(mola_frame, text="Mola", style="Yellow.PiP.TButton", command=toggle_pip_break); pip_mola_button.pack(side="left", fill="x", expand=True)
+    
     hasta_frame = ttk.Frame(content_frame); hasta_frame.pack(side="left", fill="y", padx=(2, 5))
     pip_patient_button = ttk.Button(hasta_frame, text="Hasta Yok", style="Green.PiP.TButton", command=toggle_patient_inside); pip_patient_button.pack(fill="both", expand=True)
+    
     pip_patient_call_frame = ttk.Frame(content_frame); pip_patient_call_frame.pack(side="left", fill="x", expand=True)
     pip_patient_combobox = ttk.Combobox(pip_patient_call_frame, font=("Helvetica", 10), textvariable=selected_patient_var)
     if patient_combobox: pip_patient_combobox['values'] = patient_combobox['values']
     pip_patient_combobox.pack(side="left", fill="x", expand=True)
+    
     pip_refresh_patient_btn = ttk.Button(pip_patient_call_frame, text="🔄", width=3, style="Blue.TButton", command=fetch_and_populate_patients); pip_refresh_patient_btn.pack(side="left", padx=2)
     pip_call_patient_btn = ttk.Button(pip_patient_call_frame, text="Çağır", style="Red.TButton", command=call_patient); pip_call_patient_btn.pack(side="left", padx=(0,2))
     pip_reset_patient_btn = ttk.Button(pip_patient_call_frame, text="Sıfırla", style="Red.TButton", command=reset_patient_call); pip_reset_patient_btn.pack(side="left")
+
+    pip_main_window_button = ttk.Button(content_frame, text="Ana Panel", style="Blue.TButton", command=toggle_main_window_from_pip)
+    pip_main_window_button.pack(side="right", fill="y", padx=(5, 0))
+
+    pip_screen_button = ttk.Button(content_frame, text="Ekranı Aç", style="Green.PiP.TButton", command=toggle_external_screen_from_pip)
+    pip_screen_button.pack(side="right", fill="y", padx=(5, 0))
+
     update_pip_button_states(); set_patient_inside_state(is_patient_inside)
 
 def toggle_pip_break():
@@ -497,7 +521,6 @@ def call_patient():
     doktor_adi = selected_profile.get()
     log_hasta_cagirma(doktor_adi, patient_name_to_call, "Hasta Çağrıldı")
     
-    # Arayüzdeki ayara göre ismi maskele veya tam halini bırak
     if mask_patient_name_var and mask_patient_name_var.get():
         display_name = censor_name(patient_name_to_call)
     else:
@@ -713,7 +736,7 @@ def run_countdown():
         if local_timer_label and local_timer_label.winfo_exists(): local_timer_label.config(text=time_str)
         if pip_mola_button and pip_mola_button.winfo_exists(): pip_mola_button.config(text=time_str)
         countdown_seconds_remaining -= 1; countdown_job_id = root.after(1000, run_countdown)
-    else: # Mola süresi bitti, uzatma moduna geç
+    else:
         is_on_overtime_break = True; overtime_seconds = 0
         
         secilen_profil_obj = next((p for p in load_data(PROFILER_DOSYASI, []) if p.get('ad') == selected_profile.get()), None)
@@ -731,7 +754,7 @@ def run_countdown():
                     new_content = mola_sonrasi_obj.get('icerik', '')
                     set_message_text(new_content)
                     if g_main_message_label and g_main_message_label.winfo_exists(): g_main_message_label.config(text=new_content)
-                    if timer_label and timer_label.winfo_exists(): timer_label.config(text="") # Dış ekrandaki Mola yazısını kaldır
+                    if timer_label and timer_label.winfo_exists(): timer_label.config(text="")
         
         update_all_button_states()
         run_overtime_break_timer()
@@ -753,6 +776,7 @@ def update_external_clock(clock_widget):
     global external_clock_job_id
     if clock_widget and clock_widget.winfo_exists(): clock_widget.config(text=time.strftime('%H:%M:%S')); external_clock_job_id = root.after(1000, update_external_clock, clock_widget)
     elif 'external_clock_job_id' in globals() and external_clock_job_id: root.after_cancel(external_clock_job_id); external_clock_job_id = None
+
 def update_all_button_states(*args):
     is_screen_open = message_window and message_window.winfo_exists()
     any_break_active = is_on_break or is_on_stopwatch_break or is_on_overtime_break
@@ -761,7 +785,7 @@ def update_all_button_states(*args):
     start_stop_state = 'disabled'
     if is_screen_open and not is_action_active:
         start_stop_state = 'normal'
-    if is_on_break: # Sadece geri sayımdayken durdur/devam et aktif
+    if is_on_break:
         start_stop_state = 'normal'
 
     end_reset_state = 'normal' if any_break_active else 'disabled'
@@ -783,28 +807,50 @@ def update_all_button_states(*args):
     if refresh_patient_btn: refresh_patient_btn.config(state=patient_call_state)
     if patient_inside_button: patient_inside_button.config(state='normal' if is_screen_open and not any_break_active else 'disabled')
     if close_screen_button: close_screen_button.config(state='normal')
+    update_pip_button_states()
+
 def update_pip_button_states():
     if not (pip_window and pip_window.winfo_exists()): return
     any_break_active = is_on_break or is_on_stopwatch_break or is_on_overtime_break
     mola_state = 'disabled' if is_patient_inside else 'normal'
     hasta_state = 'disabled' if any_break_active else 'normal'
+    
     if pip_mola_button: pip_mola_button.config(state=mola_state)
     if pip_mola_entry: pip_mola_entry.config(state=mola_state)
     if pip_patient_button: pip_patient_button.config(state=hasta_state)
+    
     if 'pip_patient_combobox' in globals() and pip_patient_combobox and pip_patient_combobox.winfo_exists():
         pip_patient_combobox.config(state=hasta_state)
         pip_refresh_patient_btn.config(state=hasta_state)
         pip_call_patient_btn.config(state=hasta_state)
         pip_reset_patient_btn.config(state=hasta_state)
+        
+    if 'pip_screen_button' in globals() and pip_screen_button and pip_screen_button.winfo_exists():
+        if message_window and message_window.winfo_exists():
+            pip_screen_button.config(text="Ekranı Kapat", style="Red.PiP.TButton")
+        else:
+            pip_screen_button.config(text="Ekranı Aç", style="Green.PiP.TButton")
+            
+    if 'pip_main_window_button' in globals() and pip_main_window_button and pip_main_window_button.winfo_exists():
+        if root and root.winfo_viewable():
+            pip_main_window_button.config(text="Ana Paneli Gizle", style="Yellow.PiP.TButton")
+        else:
+            pip_main_window_button.config(text="Ana Paneli Aç", style="Blue.TButton")
+
 def hide_window():
     if root: root.withdraw()
+    update_pip_button_states()
+    
 def show_window():
     global root
     if not root or not root.winfo_exists(): root = tk.Tk(); setup_gui(root)
-    else: root.deiconify()
+    else: root.deiconify(); root.lift()
+    update_pip_button_states()
+    
 def exit_action(tray_icon):
     if tray_icon: tray_icon.stop()
     if root: root.destroy()
+    
 def close_secondary_screen(keep_timer=False):
     global countdown_job_id, external_clock_job_id, overtime_job_id
     if not keep_timer:
@@ -822,7 +868,7 @@ def close_secondary_screen(keep_timer=False):
 
 def setup_gui(master_window):
     global root, text_area, return_time_entry, bg_color_swatch, fg_color_swatch, selected_screen, preview_square_frame, patient_entry, patient_combobox, refresh_patient_btn, selected_profile, profile_menu, selected_message, message_menu, selected_hospital, hospital_menu, local_timer_label, start_stop_button, reset_button, mola_telegram_var, hasta_telegram_var, mola_telegram_check, hasta_telegram_check, screen_menu, warning_time_entry, close_screen_button, patient_inside_button, patient_inside_timer_entry, call_patient_btn, reset_patient_btn, end_break_button, selected_patient_var, log_mola_var, log_cagirma_var, log_muayene_var, log_notion_mola_var, log_notion_cagirma_var, log_notion_muayene_var, log_notion_mola_check, log_notion_cagirma_check, log_notion_muayene_check, mask_patient_name_var
-    root = master_window; root.title("Poliklinik Ekran Yöneticisi v6.1"); root.geometry("1500x740"); root.minsize(1500, 740)
+    root = master_window; root.title("Poliklinik Ekran Yöneticisi v6.3"); root.geometry("1500x740"); root.minsize(1500, 740)
     style = ttk.Style(); style.theme_use('clam')
     style.configure("TButton", padding=6, relief="flat", font=('Helvetica', 9, 'bold'))
     style.configure("Blue.TButton", background="#007bff", foreground="white"); style.map("Blue.TButton", background=[('active', '#0056b3')])

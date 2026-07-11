@@ -43,6 +43,8 @@ PsyScreen_6_1.spec
 # Yerel sürüm dosyaları (kanonik giriş: PsyScreen.py)
 PsyScreen_6_0.py
 PsyScreen_6_1.py
+PsyScreen_6_2.py
+PsyScreen_6_3.py
 
 # IDE / düzenleyici
 .idea/
